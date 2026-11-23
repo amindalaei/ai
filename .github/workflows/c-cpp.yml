@@ -1,22 +1,44 @@
 
-name: MK1AI Core
+name: MK1AI Core Build
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  update:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repository Update
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build Core
+        shell: cmd
         run: |
-          echo "MK1AI Core repository is updated."
+          cl /std:c++17 /EHsc /W4 /c MK1AI_Core.cpp /Fo:MK1AI_Core.obj
+
+      - name: Build Smoke Test
+        shell: cmd
+        run: |
+          cl /std:c++17 /EHsc /W4 MK1AI_Core.cpp smoke_test.cpp /Fe:smoke_test.exe
+
+      - name: Run Smoke Test
+        shell: cmd
+        run: smoke_test.exe
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK1AI-Core-Build
+          path: |
+            MK1AI_Core.obj
+            smoke_test.exe
